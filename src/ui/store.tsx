@@ -255,13 +255,25 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  const persistRef = useRef<() => boolean>(() => true);
+  persistRef.current = () => saveJSON(ls, 'settings', settings) && saveJSON(ls, 'presets', presets) && saveJSON(ls, 'character', character) && saveJSON(ls, 'theme', theme);
   useEffect(() => {
-    const t = window.setTimeout(() => {
-      const ok = saveJSON(ls, 'settings', settings) && saveJSON(ls, 'presets', presets) && saveJSON(ls, 'character', character) && saveJSON(ls, 'theme', theme);
-      setStorageWarning(!ok);
-    }, 250);
+    const t = window.setTimeout(() => setStorageWarning(!persistRef.current()), 250);
     return () => window.clearTimeout(t);
   }, [ls, settings, presets, character, theme]);
+  // Запись отложена на 250 мс, поэтому при закрытии или перезагрузке вкладки сохраняем сразу.
+  useEffect(() => {
+    const flush = () => void persistRef.current();
+    const onHide = () => {
+      if (document.visibilityState === 'hidden') flush();
+    };
+    window.addEventListener('pagehide', flush);
+    document.addEventListener('visibilitychange', onHide);
+    return () => {
+      window.removeEventListener('pagehide', flush);
+      document.removeEventListener('visibilitychange', onHide);
+    };
+  }, []);
 
   // ───────── тема ─────────
   useEffect(() => {

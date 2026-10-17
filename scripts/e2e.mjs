@@ -108,10 +108,15 @@ page.on('request', (r) => {
 });
 
 const button = (name) => page.getByRole('button', { name, exact: true });
-const promptLocator = () => page.getByLabel('Основной промпт');
+const promptLocator = () => page.getByLabel('Основной промпт', { exact: true });
 const promptText = async () => (await promptLocator().innerText()).trim();
+const showPromptTab = async () => {
+  const tab = page.getByRole('tab', { name: 'Промпт', exact: true });
+  if ((await tab.count()) > 0 && (await tab.getAttribute('aria-selected')) !== 'true') await tab.click();
+};
 const generate = async () => {
   await button('Сгенерировать').click();
+  await showPromptTab();
   await promptLocator().waitFor({ state: 'visible' });
 };
 const goTo = async (label) => {
@@ -153,28 +158,29 @@ await step('повторная генерация даёт другой кадр
 });
 
 await step('вкладки результата: negative, JSON, метаданные', async () => {
-  await page.getByRole('tab', { name: 'Negative' }).click();
-  assert((await page.getByLabel('Negative prompt').innerText()).length > 40, 'пустой negative');
+  await page.getByRole('tab', { name: 'Negative', exact: true }).click();
+  assert((await page.locator('pre[aria-label="Negative prompt"]').innerText()).length > 40, 'пустой negative');
   await page.getByRole('tab', { name: 'JSON' }).click();
-  const json = JSON.parse(await page.getByLabel('JSON сценария').innerText());
+  const json = JSON.parse(await page.getByLabel('JSON сценария', { exact: true }).innerText());
   const age = json.subject?.age ?? json.scenario?.subject?.age;
   assert(Number.isInteger(age) && age >= 20 && age <= 45, `JSON: возраст ${age}`);
   await page.getByRole('tab', { name: 'Метаданные' }).click();
   assert((await page.locator('dl.meta .meta-row').count()) > 5, 'мало метаданных');
-  await page.getByRole('tab', { name: 'Промпт' }).click();
 });
 
 await step('скачивание TXT и JSON', async () => {
+  await showPromptTab();
   const [txt] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Скачать TXT' }).click()]);
   assert(txt.suggestedFilename().endsWith('.txt'), `имя файла ${txt.suggestedFilename()}`);
   assert(readFileSync(await txt.path(), 'utf8').includes('photorealistic'), 'в TXT нет промпта');
   await page.getByRole('tab', { name: 'JSON' }).click();
   const [js] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Скачать JSON' }).click()]);
   assert(JSON.parse(readFileSync(await js.path(), 'utf8')), 'JSON не разбирается');
-  await page.getByRole('tab', { name: 'Промпт' }).click();
+  await showPromptTab();
 });
 
 await step('избранное и история с поиском', async () => {
+  await showPromptTab();
   await button('Сохранить в избранное').click();
   await generate();
   await goTo('История');
@@ -239,6 +245,29 @@ await step('разделы «Пресеты» и «О проекте» откр�
   await goTo('О проекте');
   await page.getByRole('heading', { level: 2 }).first().waitFor();
   await goTo('Студия');
+});
+
+await step('клавиатура: пропуск навигации, Ctrl+Enter, Tab до кнопки, Escape в диалоге', async () => {
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.keyboard.press('Tab');
+  const skip = await page.evaluate(() => document.activeElement?.textContent?.trim());
+  assert(skip === 'К содержимому', `первым по Tab должен быть «К содержимому», а не «${skip}»`);
+  await page.keyboard.press('Control+Enter');
+  await promptLocator().waitFor({ state: 'visible' });
+  const before = await promptText();
+  let reached = false;
+  for (let i = 0; i < 60 && !reached; i++) {
+    await page.keyboard.press('Tab');
+    reached = await page.evaluate(() => document.activeElement?.textContent?.trim() === 'Сгенерировать');
+  }
+  assert(reached, 'до кнопки «Сгенерировать» не добраться клавишей Tab за 60 нажатий');
+  assert(await page.evaluate(() => getComputedStyle(document.activeElement).outlineStyle !== 'none' || getComputedStyle(document.activeElement).boxShadow !== 'none'), 'у сфокусированной кнопки нет видимого индикатора фокуса');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction((text) => document.querySelector('pre[aria-label="Основной промпт"]')?.textContent?.trim() !== text, before);
+  await page.getByRole('button', { name: 'Сбросить', exact: true }).first().click();
+  await page.getByRole('dialog').waitFor();
+  await page.keyboard.press('Escape');
+  await page.getByRole('dialog').waitFor({ state: 'detached' });
 });
 
 await step('мобильная раскладка без горизонтальной прокрутки', async () => {

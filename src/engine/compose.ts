@@ -303,11 +303,16 @@ export function composeFromPlan(plan: Plan, cx: ComposeContext): PhotoScenario |
   const keepSun = subjKeep.face?.glasses === 'sunglasses';
   const sunOk = (sc: Scene, t: Triple): boolean => sunglassesPlausible({ tags: [], time: t.time, weather: t.weather, outdoors: sc.env !== 'indoor' });
 
-  // 1. Локация
+  // 1. Локация: при сохранённом сезоне (серия, смена локации) предпочитаем сцены, где он возможен
   const sunny = keepSun ? plan.candidates.filter((c) => c.triples.some((t) => sunOk(c.scene, t))) : [];
+  let scenePool = sunny.length ? sunny : plan.candidates;
+  if (soft.season) {
+    const sameSeason = scenePool.filter((c) => c.triples.some((t) => t.season === soft.season));
+    if (sameSeason.length) scenePool = sameSeason;
+  }
   const cand = choose(
     rng.fork('scene'),
-    sunny.length ? sunny : plan.candidates,
+    scenePool,
     (c) => R.temper(R.rarityW[c.scene.rarity] * (1 + 0.04 * c.narrowed.length)),
     soft.sceneId ? (c) => c.scene.id === soft.sceneId : undefined,
     avoid.sceneId ? (c) => c.scene.id === avoid.sceneId : undefined,

@@ -155,7 +155,7 @@ export const OUTFITS: readonly OutfitDef[] = [
   look('dance-warm-up-wrap-cardigan-leg-warmers', 'a {c} wrap cardigan over a leotard, warm-up leggings, leg warmers and soft dance shoes', 'кардиган с запахом поверх танцевального купальника, разминочные леггинсы, гетры и мягкие туфли', [1, 3], ['dance']),
   look('dance-zip-hoodie-leotard-sweatpants', 'a {c} zip-up hoodie over a plain leotard, loose sweatpants and sneakers', 'толстовка на молнии поверх танцевального купальника, свободные спортивные брюки и кроссовки', [2, 3], ['dance']),
   look('dance-knitted-wrap-top-warm-up-trousers', 'a {c} knitted wrap top, thick warm-up trousers, wool socks and soft dance shoes', 'вязаный топ с запахом, тёплые разминочные брюки, шерстяные носки и мягкие туфли', [2, 3], ['dance']),
-  look('dance-street-tee-cargo-sneakers', 'an oversized {c} t-shirt, loose cargo trousers and clean sneakers for street dance', 'большая футболка, свободные брюки-карго и чистые кроссовки для уличных танцев', [1, 3], ['dance', 'casual']),
+  look('dance-street-tee-cargo-sneakers', 'an oversized {c} t-shirt, loose cargo trousers and clean sneakers', 'большая футболка, свободные брюки-карго и чистые кроссовки', [1, 3], ['dance', 'casual']),
 
   // ── swim ──
   look('swim-plain-one-piece-wide-straps', 'a {c} plain one-piece swimsuit with wide straps', 'простой слитный купальник с широкими бретелями', [0, 1], ['swim']),
