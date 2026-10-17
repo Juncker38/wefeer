@@ -1,0 +1,18 @@
+# Блок для общего Caddyfile (D:\server-projects\reverse-proxy\Caddyfile).
+# Caddy сам получает и продлевает сертификат (Let's Encrypt / ZeroSSL), если домен указывает на сервер,
+# и перенаправляет HTTP → HTTPS. Контейнер promts-web должен быть в сети, к которой подключён Caddy.
+#
+# Применение без простоя:
+#   docker exec server-caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+#   docker exec server-caddy caddy reload   --config /etc/caddy/Caddyfile --adapter caddyfile
+
+promts.vibecods.xyz {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+
+	reverse_proxy promts-web:80
+}

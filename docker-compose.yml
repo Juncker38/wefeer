@@ -1,0 +1,24 @@
+name: promts-vibecods
+
+# Статический сайт RealPhoto Prompt Studio за общим reverse proxy (Caddy, сеть reverse-proxy_default).
+# Публикуемых портов нет: Caddy обращается к контейнеру по имени promts-web:80 и сам выпускает TLS-сертификат.
+services:
+  promts-web:
+    image: nginx:1.27-alpine
+    container_name: promts-web
+    restart: unless-stopped
+    volumes:
+      - ./dist:/usr/share/nginx/html:ro
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - reverse-proxy_default
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+networks:
+  reverse-proxy_default:
+    external: true

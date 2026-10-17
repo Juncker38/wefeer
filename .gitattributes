@@ -1,0 +1,4 @@
+* text=auto eol=lf
+dist/** -text
+docs/screenshots/** binary
+*.png binary

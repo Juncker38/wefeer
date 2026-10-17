@@ -1,0 +1,9 @@
+node_modules/
+e2e-artifacts/
+*.zip
+*.log
+.DS_Store
+.vite/
+coverage/
+dist/
+handoff/
